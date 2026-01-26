@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>صيّاد البحر | نسخة الموبايل</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent; /* إخفاء ومضة اللمس الزرقاء */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* ممنوع السكرول */
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(180deg, #87CEEB 0%, #006994 40%, #001e36 100%);
+            touch-action: none; /* يمنع متصفح الموبايل من التدخل في اللمس */
+            user-select: none;
+            width: 100vw;
+            height: 100vh;
+            overscroll-behavior: none; /* يمنع "نطاطية" الشاشة في الآيفون */
+        }
+
+        #game-container {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* Watermark Background */
+        #bg-watermark {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%; /* تكبير نسبي للموبايل */
+            max-width: 400px;
+            opacity: 0.05; z-index: 1; pointer-events: none;
+        }
+
+        /* Effects Overlays */
+        .overlay-effect {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            pointer-events: none; display: none; z-index: 5;
+        }
+        #frozen-effect { background: rgba(0, 200, 255, 0.2); box-shadow: inset 0 0 30px #00BFFF; }
+        #sniper-effect { border: 5px solid #FFD700; box-shadow: inset 0 0 20px #FFD700; }
+        #phosphor-effect { background: rgba(50, 255, 50, 0.15); box-shadow: inset 0 0 30px #32CD32; }
+
+        /* UI Layer - تكبير العناصر للموبايل */
+        .ui-layer {
+            position: absolute; top: 10px; left: 10px; right: 10px;
+            display: flex; justify-content: space-between;
+            pointer-events: none; z-index: 10;
+        }
+        .stat-box {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 5px 15px; border-radius: 20px;
+            border: 2px solid #FFD700; color: white;
+            font-size: 1.1rem; font-weight: bold;
+            display: flex; align-items: center; gap: 5px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        /* Sound Button - مكان مناسب للإبهام */
+        #sound-btn {
+            position: absolute; bottom: 30px; left: 20px;
+            background: rgba(255,255,255,0.2); color: white;
+            border: 2px solid white; border-radius: 50%;
+            width: 50px; height: 50px; font-size: 1.5rem;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 100;
+            backdrop-filter: blur(5px);
+        }
+
+        canvas { position: relative; z-index: 2; display: block; }
+
+        /* Screens - تعديل الخلفية لتكون bg.jpg */
+        .screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            /* التعديل هنا: الصورة الخلفية */
+            background: url('bg.jpg') no-repeat center center;
+            background-size: 100% 100%; /* تملأ الشاشة بالكامل بدون قص */
+            
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            z-index: 20; color: white; text-align: center;
+            transition: opacity 0.3s;
+            padding: 20px;
+            /* إضافة ظل للنصوص لضمان الوضوح فوق الصورة */
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+        .hidden { opacity: 0; pointer-events: none; }
+
+        h1 { color: #FFD700; font-size: 2.5rem; margin: 10px 0; text-shadow: 0 0 15px #ff8c00, 2px 2px 0 #000; }
+        p { font-size: 1rem; color: #fff; margin-bottom: 20px; line-height: 1.5; font-weight: bold; }
+
+        /* أزرار - تعديل الخلفية لتكون bg.jpg */
+        .btn {
+            /* التعديل هنا */
+            background: url('bg.jpg') no-repeat center center;
+            background-size: 100% 100%; /* تملأ الزر بالكامل */
+            
+            border: 2px solid rgba(255,255,255,0.5); /* حدود خفيفة لتحديد الزر */
+            padding: 15px 50px; color: white;
+            font-size: 1.2rem; border-radius: 50px; cursor: pointer;
+            font-family: 'Cairo', sans-serif; font-weight: bold;
+            margin: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            transition: transform 0.1s;
+            width: 80%; max-width: 300px;
+            touch-action: manipulation;
+            text-shadow: 0 2px 5px black; /* ظل للنص داخل الزر */
+        }
+        .btn:active { transform: scale(0.95); opacity: 0.9; }
+        
+        .btn-primary {
+            /* تم إزالة التدرج اللوني القديم ليعتمد على الصورة */
+            border: 2px solid #FFD700; /* تمييز الزر الرئيسي بحدود ذهبية */
+            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.3);
+            font-size: 1.4rem; padding: 18px 50px;
+        }
+
+        /* Catalog Grid - تحسين العرض */
+        .catalog-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+            background: rgba(0,0,0,0.7); /* خلفية سوداء شفافة للقراءة */
+            padding: 10px;
+            border-radius: 15px; margin: 10px 0; width: 100%;
+            text-align: right; max-height: 50vh; overflow-y: auto;
+            -webkit-overflow-scrolling: touch; 
+        }
+        .catalog-item {
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(255,255,255,0.1); padding: 8px;
+            border-radius: 8px; font-size: 0.85rem;
+        }
+
+        .floating-text {
+            position: absolute; font-weight: 900; font-size: 1.3rem;
+            pointer-events: none; animation: floatUp 1.2s forwards;
+            text-shadow: 2px 2px 0 #000; z-index: 15; white-space: nowrap;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform:translate(-50%, 0) scale(1); }
+            100% { opacity: 0; transform:translate(-50%, -120px) scale(1.4); }
+        }
+        
+        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <img src="logo.png" id="bg-watermark" alt="Logo Background">
+    
+    <div id="frozen-effect" class="overlay-effect"></div>
+    <div id="sniper-effect" class="overlay-effect"></div>
+    <div id="phosphor-effect" class="overlay-effect"></div>
+
+    <div class="ui-layer">
+        <div class="stat-box">⭐ <span id="score">0</span></div>
+        <div class="stat-box">⏳ <span id="timer">60</span></div>
+    </div>
+    
+    <div id="sound-btn" onclick="toggleMute()">🔊</div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="start-screen" class="screen">
+        <img src="logo.png" style="width: 100px; margin-bottom: 15px; border-radius: 15px; box-shadow: 0 0 25px rgba(255,215,0,0.4);">
+        <h1>صيّاد البحر</h1>
+        <p>المس الشاشة وحرك يمين وشمال للصيد.<br>اجمع أكبر سكور قبل الوقت ما يخلص!</p>
+        <button class="btn btn-primary" onclick="startGame()">إبدأ الصيد 🎣</button>
+        <button class="btn" onclick="showInfo()">📋 التعليمات</button>
+    </div>
+
+    <div id="info-screen" class="screen hidden">
+        <h2 style="color:#FFD700; font-size: 1.8rem; text-shadow: 2px 2px 0 #000;">دليل الصياد 📖</h2>
+        <div class="catalog-grid">
+            <div class="catalog-item"><span>🧪 فسفور</span> <span style="color:#0f0">السكور ×2</span></div>
+            <div class="catalog-item"><span>🌀 دوامة</span> <span style="color:#0f0">لمّ السمك!</span></div>
+            <div class="catalog-item"><span>🎯 قناص</span> <span style="color:#0f0">ضد العوائق</span></div>
+            <div class="catalog-item"><span>👢 حذاء</span> <span style="color:#f55">تجميد 1ث</span></div>
+            <div class="catalog-item"><span>🦈 قرش</span> <span style="color:red">قطع حبل</span></div>
+        </div>
+        <button class="btn" onclick="hideInfo()">رجوع</button>
+    </div>
+
+    <div id="end-screen" class="screen hidden">
+        <h1>انتهى الوقت!</h1>
+        <p>السكور النهائي: <span id="final-score" style="color:#FFD700; font-size:2.5rem; font-weight:bold; display:block; margin-top:10px; text-shadow: 2px 2px 0 #000;">0</span></p>
+        <div id="rank-badge" style="background: white; color: #333; padding: 8px 25px; border-radius: 20px; font-weight: bold; margin-bottom: 25px; font-size: 1.1rem; box-shadow: 0 5px 15px rgba(0,0,0,0.5);"></div>
+        <button class="btn btn-primary" onclick="startGame()">العب تاني 🔄</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('game-container');
+    const frozenOverlay = document.getElementById('frozen-effect');
+    const sniperOverlay = document.getElementById('sniper-effect');
+    const phosphorOverlay = document.getElementById('phosphor-effect');
+    const boatImg = new Image();
+    boatImg.src = 'logo.png';
+
+    // --- Audio ---
+    const sounds = {
+        splash: new Audio('splash.mp3'),
+        catch: new Audio('catch.mp3'),
+        magic: new Audio('magic.mp3'),
+        hurt: new Audio('hurt.mp3'),
+        win: new Audio('win.mp3'),
+        bgm: new Audio('bgm.mp3')
+    };
+    sounds.bgm.loop = true;
+    sounds.bgm.volume = 0.3;
+    let isMuted = false;
+
+    function playSound(name) {
+        if (isMuted) return;
+        if (sounds[name]) {
+            sounds[name].currentTime = 0;
+            sounds[name].play().catch(() => {});
+        }
+    }
+
+    function toggleMute() {
+        isMuted = !isMuted;
+        const btn = document.getElementById('sound-btn');
+        if (isMuted) {
+            btn.innerText = '🔇';
+            sounds.bgm.pause();
+        } else {
+            btn.innerText = '🔊';
+            if (gameState === 'PLAYING') sounds.bgm.play().catch(()=>{});
+        }
+    }
+
+    // --- Game Engine ---
+    let gameState = 'START';
+    let score = 0;
+    let timeLeft = 60;
+    let gameSpeedMultiplier = 1;
+    let fishOpacity = 1.0;
+    let fishes = [];
+    let bubbles = [];
+    let comboCount = 0;
+    let lastCatchTime = 0;
+    
+    const hook = {
+        x: 0, y: 100, originalY: 100,
+        state: 'IDLE', speed: 25, 
+        caughtObj: null, stunTimer: 0,
+        isSniper: false, sniperTimer: 0,
+        isDoubleScore: false, doubleScoreTimer: 0
+    };
+
+    const gafshat = {
+        bolti: ["أحلى صينية", "رزق الهبل", "يا سمك يا بني", "عشاء الغلابة", "بلطي بلدي"],
+        bouri: ["يا بوري يا لعبك", "فسفور عالي", "مزاج العالي", "سنجاري يا معلم"],
+        shrimp: ["جمبري الغلابة لاء", "يا قشطة", "عزومة مراكبية", "كله فسفور"],
+        lobster: ["يا باشا!", "وجبة VIP", "الله عليك", "صيد الملوك"]
+    };
+
+    const objectTypes = [
+        { id: 'bolti', score: 10, emoji: '🐟', speed: 2.5, type: 'fish', prob: 25, gafshat: gafshat.bolti },
+        { id: 'bouri', score: 20, emoji: '🐠', speed: 3.5, type: 'fish', prob: 20, gafshat: gafshat.bouri },
+        { id: 'shrimp', score: 30, emoji: '🦐', speed: 4.5, type: 'fish', prob: 15, gafshat: gafshat.shrimp },
+        { id: 'lobster', score: 100, emoji: '🦞', speed: 8, type: 'fish', prob: 3, gafshat: gafshat.lobster },
+        { id: 'time', score: 0, emoji: '⏰', speed: 5, type: 'bonus', prob: 4, msg: '+10 ث' },
+        { id: 'whirlpool', score: 0, emoji: '🌀', speed: 6, type: 'skill', prob: 4, msg: 'الدوامة!' },
+        { id: 'phosphorus', score: 0, emoji: '🧪', speed: 6, type: 'skill', prob: 4, msg: 'فسفووور' },
+        { id: 'sniper', score: 0, emoji: '🎯', speed: 6, type: 'skill', prob: 3, msg: 'قناص!' },
+        { id: 'trash', score: -10, emoji: '🧃', speed: 2, type: 'bad', prob: 8, freeze: 0, msg: 'يععع' },
+        { id: 'boot', score: -15, emoji: '👢', speed: 2, type: 'bad', prob: 8, freeze: 60, msg: 'تجميد!' },
+        { id: 'seaweed', score: -20, emoji: '🌿', speed: 2.5, type: 'bad', prob: 8, freeze: 120, msg: 'تجميد!' },
+        { id: 'shark', score: -50, emoji: '🦈', speed: 5, type: 'bad', prob: 9, freeze: 180, msg: 'اتقطع!' }
+    ];
+
+    // --- Mobile Resizing ---
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        // تعديل ارتفاع المركب ليكون مناسب للموبايل
+        hook.originalY = canvas.height * 0.15; 
+        if (hook.state === 'IDLE') hook.y = hook.originalY;
+    }
+    window.addEventListener('resize', resize);
+    window.addEventListener('orientationchange', () => setTimeout(resize, 100)); // تأخير بسيط لضمان الدوران
+    resize();
+
+    // --- Mobile Touch Input ---
+    let inputX = canvas.width / 2;
+
+    function handleInput(x) {
+        if (gameState === 'PLAYING' && hook.state === 'IDLE') {
+            inputX = x;
+            // حدود الشاشة عشان المركب ميطلعش برة
+            if (inputX < 30) inputX = 30;
+            if (inputX > canvas.width - 30) inputX = canvas.width - 30;
+        }
+    }
+
+    // Touch Events
+    document.addEventListener('touchmove', (e) => {
+        // منع السكرول أثناء اللعب
+        e.preventDefault(); 
+        handleInput(e.touches[0].clientX);
+    }, { passive: false });
+
+    document.addEventListener('touchstart', (e) => {
+        // لو لمس الشاشة (مش زرار)، نحرك المركب لمكان اللمسة
+        if (e.target.tagName !== 'BUTTON' && e.target.id !== 'sound-btn') {
+            handleInput(e.touches[0].clientX);
+            // ونرمي السنارة كمان (اختياري، ممكن تفضل ضغط للرمي)
+            triggerHook();
+        }
+    }, { passive: false });
+
+    // Mouse Events (للكمبيوتر برضه)
+    document.addEventListener('mousemove', (e) => handleInput(e.clientX));
+    document.addEventListener('mousedown', (e) => {
+         if (e.target.tagName !== 'BUTTON' && e.target.id !== 'sound-btn') triggerHook();
+    });
+
+    const triggerHook = () => {
+        if (gameState === 'PLAYING' && hook.state === 'IDLE') {
+            hook.state = 'DOWN';
+            playSound('splash');
+        }
+    };
+
+    function showInfo() {
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('info-screen').classList.remove('hidden');
+    }
+    function hideInfo() {
+        document.getElementById('info-screen').classList.add('hidden');
+        document.getElementById('start-screen').classList.remove('hidden');
+    }
+
+    function startGame() {
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('end-screen').classList.add('hidden');
+        
+        // Fullscreen request on mobile (optional but nice)
+        if (document.documentElement.requestFullscreen && window.innerWidth < 800) {
+           // document.documentElement.requestFullscreen().catch(()=>{});
+        }
+
+        gameState = 'PLAYING';
+        score = 0;
+        timeLeft = 60;
+        gameSpeedMultiplier = 1;
+        fishOpacity = 1.0;
+        fishes = [];
+        bubbles = [];
+        hook.state = 'IDLE';
+        hook.y = hook.originalY; // Reset Y
+        hook.caughtObj = null;
+        
+        hook.isSniper = false; hook.sniperTimer = 0;
+        hook.isDoubleScore = false; hook.doubleScoreTimer = 0;
+        
+        sniperOverlay.style.display = 'none';
+        phosphorOverlay.style.display = 'none';
+        
+        playSound('bgm');
+        updateUI();
+
+        const timerInt = setInterval(() => {
+            if (gameState !== 'PLAYING') { clearInterval(timerInt); return; }
+            timeLeft--;
+            
+            if (hook.isSniper) {
+                if (--hook.sniperTimer <= 0) {
+                    hook.isSniper = false;
+                    sniperOverlay.style.display = 'none';
+                    showText("انتهاء القناص", hook.x, hook.originalY, '#ccc');
+                }
+            }
+            if (hook.isDoubleScore) {
+                if (--hook.doubleScoreTimer <= 0) {
+                    hook.isDoubleScore = false;
+                    phosphorOverlay.style.display = 'none';
+                    showText("خلص الفسفور", hook.x, hook.originalY, '#ccc');
+                }
+            }
+
+            if (timeLeft < 50 && timeLeft % 5 === 0 && timeLeft > 0) {
+                gameSpeedMultiplier += 0.1; 
+                fishOpacity -= 0.1;
+                if (fishOpacity < 0.3) fishOpacity = 0.3;
+            }
+
+            if (timeLeft <= 0) { timeLeft = 0; endGame(); }
+            updateUI();
+        }, 1000);
+
+        gameLoop();
+    }
+
+    function spawnObject() {
+        if (Math.random() < 0.045) { // 4.5% chance per frame
+            const totalProb = objectTypes.reduce((acc, obj) => acc + obj.prob, 0);
+            let rand = Math.random() * totalProb;
+            let selected = objectTypes[0];
+            for (let obj of objectTypes) {
+                if (rand < obj.prob) { selected = obj; break; }
+                rand -= obj.prob;
+            }
+
+            const isRight = Math.random() > 0.5;
+            fishes.push({
+                x: isRight ? -60 : canvas.width + 60,
+                y: hook.originalY + 50 + Math.random() * (canvas.height - hook.originalY - 100),
+                type: selected,
+                dir: isRight ? 1 : -1,
+                wobble: Math.random() * Math.PI * 2
+            });
+        }
+    }
+
+    function updatePhysics() {
+        // Hook Logic
+        if (hook.state === 'DOWN') {
+            hook.y += hook.speed;
+            if (hook.y > canvas.height) hook.state = 'UP';
+        } else if (hook.state === 'UP') {
+            hook.y -= hook.speed;
+            if (hook.y <= hook.originalY) {
+                hook.y = hook.originalY;
+                hook.state = 'IDLE';
+                if (hook.caughtObj) { processCatch(hook.caughtObj); hook.caughtObj = null; }
+            }
+        } else if (hook.state === 'STUNNED') {
+            hook.y += (hook.originalY - hook.y) * 0.1;
+            hook.stunTimer--;
+            frozenOverlay.style.display = 'block';
+            if (hook.stunTimer <= 0) {
+                hook.state = 'IDLE';
+                frozenOverlay.style.display = 'none';
+            }
+        } else if (hook.state === 'IDLE') {
+            // Smooth movement towards input
+            hook.x += (inputX - hook.x) * 0.2; 
+        }
+
+        // Fishes Logic
+        for (let i = fishes.length - 1; i >= 0; i--) {
+            let f = fishes[i];
+            f.x += (f.type.speed * gameSpeedMultiplier) * f.dir;
+            f.y += Math.sin(f.x * 0.02 + f.wobble) * 0.5;
+
+            if ((f.dir === 1 && f.x > canvas.width + 100) || (f.dir === -1 && f.x < -100)) {
+                fishes.splice(i, 1); continue;
+            }
+
+            // Collision
+            if (hook.state === 'DOWN' && !hook.caughtObj) {
+                // Adjust hitbox for mobile (slightly larger forgiveness)
+                if (Math.hypot(hook.x - f.x, hook.y - f.y) < 60) {
+                    if (hook.isSniper && f.type.type === 'bad') continue; 
+                    hook.caughtObj = f.type;
+                    hook.state = 'UP';
+                    fishes.splice(i, 1);
+                }
+            }
+        }
+        
+        // Bubbles
+        if(Math.random()<0.1) bubbles.push({x:Math.random()*canvas.width, y:canvas.height, r:Math.random()*5+2, s:Math.random()*2+1});
+        for(let i=bubbles.length-1; i>=0; i--) {
+            bubbles[i].y -= bubbles[i].s;
+            if(bubbles[i].y < -10) bubbles.splice(i,1);
+        }
+    }
+
+    function processCatch(item) {
+        const now = Date.now();
+        if (now - lastCatchTime < 2500) comboCount++; else comboCount = 1;
+        lastCatchTime = now;
+
+        if (item.id === 'whirlpool') {
+            playSound('magic');
+            showText("🌊 شغّل الدوامة!!", hook.x, hook.originalY, '#00ffff', true);
+            let totalSucked = 0;
+            fishes.forEach(f => {
+                let pts = f.type.score;
+                if (pts > 0) {
+                    if (hook.isDoubleScore) pts *= 2;
+                    totalSucked += pts;
+                }
+            });
+            score += totalSucked;
+            fishes = []; 
+            let extraMsg = hook.isDoubleScore ? " (×2)" : "";
+            showText(`+${totalSucked} شفط${extraMsg}`, hook.x, hook.originalY + 50, '#FFD700');
+            return;
+        }
+
+        if (item.id === 'sniper') {
+            playSound('magic');
+            hook.isSniper = true;
+            hook.sniperTimer = 10;
+            sniperOverlay.style.display = 'block';
+            showText("🎯 القناص شغال!", hook.x, hook.originalY, '#FFD700', true);
+            return;
+        }
+
+        if (item.id === 'phosphorus') {
+            playSound('magic');
+            hook.isDoubleScore = true;
+            hook.doubleScoreTimer = 10;
+            phosphorOverlay.style.display = 'block';
+            showText("🧪 اديها فسفووور!", hook.x, hook.originalY, '#32CD32', true);
+            return;
+        }
+
+        if (item.id === 'time') {
+            playSound('magic');
+            timeLeft += 10;
+            showText("⏰ +10 ثواني!", hook.x, hook.originalY, '#0f0');
+        } else if (item.type === 'bad') {
+            playSound('hurt');
+            container.classList.add('shake');
+            setTimeout(()=>container.classList.remove('shake'), 500);
+            
+            score += item.score;
+            comboCount = 0;
+            
+            if (item.freeze > 0) {
+                hook.state = 'STUNNED'; hook.stunTimer = item.freeze;
+                let col = item.id === 'shark' ? 'red' : 'orange';
+                showText(item.msg, hook.x, hook.originalY, col, true);
+            } else {
+                showText(item.msg, hook.x, hook.originalY, 'orange');
+            }
+        } else {
+            playSound('catch');
+            let earnedScore = item.score;
+            let msgText = `+${earnedScore}`;
+            let subText = "";
+            let textColor = '#fff';
+
+            if (item.gafshat) {
+                msgText = item.gafshat[Math.floor(Math.random() * item.gafshat.length)];
+                subText = `+${earnedScore}`;
+            }
+
+            if (hook.isDoubleScore) {
+                earnedScore *= 2;
+                subText = `+${earnedScore} (×2)`;
+                textColor = '#32CD32'; 
+            }
+
+            if (comboCount > 1) {
+                if (comboCount === 2) subText += " (Double)";
+                else if (comboCount >= 3) {
+                    if (item.id === 'shrimp') {
+                        msgText = "👑 أنت كينج 👑";
+                        textColor = "#FFD700";
+                    } else {
+                        subText += " (Triple!)";
+                    }
+                }
+            }
+
+            score += earnedScore;
+            if (item.score >= 100) textColor = '#FFD700';
+
+            showText(msgText, hook.x, hook.originalY, textColor);
+            if(subText) setTimeout(() => showText(subText, hook.x, hook.originalY + 30, '#ccc'), 200);
+        }
+        
+        if(score<0) score=0;
+        updateUI();
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Bubbles
+        ctx.fillStyle = 'rgba(255,255,255,0.15)';
+        bubbles.forEach(b => { ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 7); ctx.fill(); });
+
+        // Fishing Line
+        ctx.beginPath(); ctx.moveTo(hook.x, 0); ctx.lineTo(hook.x, hook.y);
+        ctx.lineWidth = hook.state === 'STUNNED' ? 1 : 2; 
+        
+        if (hook.isSniper) ctx.strokeStyle = '#FFD700'; 
+        else if (hook.isDoubleScore) ctx.strokeStyle = '#32CD32'; 
+        else if (hook.state === 'STUNNED') ctx.strokeStyle = 'red';
+        else ctx.strokeStyle = 'white';
+
+        if (hook.state === 'STUNNED' && hook.stunTimer > 100) ctx.setLineDash([5, 5]);
+        else ctx.setLineDash([]);
+        ctx.stroke(); ctx.setLineDash([]);
+
+        // The Hook (End of line)
+        ctx.save(); ctx.translate(hook.x, hook.y);
+        if (hook.state !== 'STUNNED') { 
+            ctx.fillStyle = hook.isSniper ? '#FFD700' : '#aaa';
+            ctx.beginPath(); ctx.arc(0,0,8,0,3.14); ctx.stroke(); 
+        }
+        if(hook.caughtObj) {
+            ctx.rotate(Math.PI); ctx.font='30px Arial'; ctx.textAlign='center'; 
+            ctx.textBaseline='middle'; 
+            ctx.fillStyle = 'black'; 
+            ctx.fillText(hook.caughtObj.emoji, 0, -20);
+        }
+        ctx.restore();
+
+        // Fishes
+        ctx.save();
+        ctx.globalAlpha = fishOpacity; 
+        fishes.forEach(f => {
+            ctx.save(); 
+            ctx.translate(f.x, f.y); 
+            ctx.scale(f.dir, 1);
+            ctx.font = '40px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#000000'; ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+            ctx.fillText(f.type.emoji, 0, 0); 
+            ctx.restore();
+        });
+        ctx.restore();
+
+        // --- The Boat (LOGO) ---
+        const boatWidth = canvas.width < 500 ? 80 : 100; // تصغير المركب على الموبايل
+        const boatHeight = canvas.width < 500 ? 50 : 60;
+        
+        if (boatImg.complete) {
+            ctx.save();
+            if(hook.isSniper) {
+                ctx.shadowColor = "#FFD700"; ctx.shadowBlur = 20;
+            } else if (hook.isDoubleScore) {
+                ctx.shadowColor = "#32CD32"; ctx.shadowBlur = 20;
+            }
+            // رسم اللوجو بحيث يكون منتصفه هو مكان خروج السنارة
+            ctx.drawImage(boatImg, hook.x - boatWidth/2, hook.originalY - boatHeight + 10, boatWidth, boatHeight);
+            ctx.restore();
+        } else {
+            // Fallback square
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(hook.x - 30, hook.originalY - 35, 60, 35);
+        }
+    }
+
+    function gameLoop() {
+        if (gameState !== 'PLAYING') return;
+        spawnObject(); updatePhysics(); draw();
+        requestAnimationFrame(gameLoop);
+    }
+
+    function updateUI() {
+        document.getElementById('score').innerText = score;
+        const t = document.getElementById('timer');
+        t.innerText = timeLeft;
+        t.style.color = timeLeft < 10 ? 'red' : 'white';
+        
+        const scoreBox = document.querySelector('.stat-box');
+        if(hook.isDoubleScore) {
+            scoreBox.style.borderColor = '#32CD32'; scoreBox.style.color = '#32CD32';
+        } else {
+            scoreBox.style.borderColor = '#FFD700'; scoreBox.style.color = 'white';
+        }
+    }
+
+    function showText(txt, x, y, col, isBig=false) {
+        const d = document.createElement('div');
+        d.className = 'floating-text'; 
+        d.innerText = txt;
+        d.style.left = x+'px'; d.style.top = y+'px'; d.style.color = col;
+        if(isBig) { d.style.fontSize = '2rem'; d.style.zIndex = 100; d.style.textShadow = '0 0 10px white'; }
+        container.appendChild(d); setTimeout(()=>d.remove(), 1200);
+    }
+
+    function endGame() {
+        gameState = 'END';
+        playSound('win');
+        sounds.bgm.pause();
+        document.getElementById('end-screen').classList.remove('hidden');
+        document.getElementById('final-score').innerText = score;
+        const badge = document.getElementById('rank-badge');
+        if (score >= 700) {
+            badge.innerText = "👑 كبير الصيادين (أسطورة)";
+            badge.style.border = "3px solid #FFD700"; badge.style.background = "#fffbe0";
+        } else if (score >= 350) {
+            badge.innerText = "😎 صيّاد بريمو";
+            badge.style.border = "2px solid #silver";
+        } else {
+            badge.innerText = "🐟 صيّاد على قده";
+            badge.style.border = "none";
+        }
+    }
+</script>
+
+</body>
+</html>
