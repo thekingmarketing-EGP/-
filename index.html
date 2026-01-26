@@ -5,46 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <title>صيّاد البحر | نسخة الموبايل</title>
+    <title>صيّاد البحر | نسخة سهلة</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
 
         * {
             box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent; /* إخفاء ومضة اللمس الزرقاء */
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden; /* ممنوع السكرول */
+            margin: 0; padding: 0;
+            overflow: hidden;
             font-family: 'Cairo', sans-serif;
             background: linear-gradient(180deg, #87CEEB 0%, #006994 40%, #001e36 100%);
-            touch-action: none; /* يمنع متصفح الموبايل من التدخل في اللمس */
+            touch-action: none;
             user-select: none;
-            width: 100vw;
-            height: 100vh;
-            overscroll-behavior: none; /* يمنع "نطاطية" الشاشة في الآيفون */
+            width: 100vw; height: 100vh;
+            overscroll-behavior: none;
         }
 
         #game-container {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%;
-            height: 100%;
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
             overflow: hidden;
         }
 
-        /* Watermark Background */
         #bg-watermark {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 80%; /* تكبير نسبي للموبايل */
-            max-width: 400px;
+            width: 80%; max-width: 400px;
             opacity: 0.05; z-index: 1; pointer-events: none;
         }
 
-        /* Effects Overlays */
         .overlay-effect {
             position: absolute; top:0; left:0; width:100%; height:100%;
             pointer-events: none; display: none; z-index: 5;
@@ -53,7 +46,6 @@
         #sniper-effect { border: 5px solid #FFD700; box-shadow: inset 0 0 20px #FFD700; }
         #phosphor-effect { background: rgba(50, 255, 50, 0.15); box-shadow: inset 0 0 30px #32CD32; }
 
-        /* UI Layer - تكبير العناصر للموبايل */
         .ui-layer {
             position: absolute; top: 10px; left: 10px; right: 10px;
             display: flex; justify-content: space-between;
@@ -68,9 +60,10 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
 
-        /* Sound Button - مكان مناسب للإبهام */
+        /* تعديل: زر الصوت أقصى اليمين */
         #sound-btn {
-            position: absolute; bottom: 30px; left: 20px;
+            position: absolute; bottom: 30px; 
+            right: 20px; left: auto; /* تم النقل لليمين */
             background: rgba(255,255,255,0.2); color: white;
             border: 2px solid white; border-radius: 50%;
             width: 50px; height: 50px; font-size: 1.5rem;
@@ -81,19 +74,14 @@
 
         canvas { position: relative; z-index: 2; display: block; }
 
-        /* Screens - تعديل الخلفية لتكون bg.jpg */
         .screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            /* التعديل هنا: الصورة الخلفية */
             background: url('bg.jpg') no-repeat center center;
-            background-size: 100% 100%; /* تملأ الشاشة بالكامل بدون قص */
-            
+            background-size: 100% 100%;
             display: flex; flex-direction: column;
             justify-content: center; align-items: center;
             z-index: 20; color: white; text-align: center;
-            transition: opacity 0.3s;
-            padding: 20px;
-            /* إضافة ظل للنصوص لضمان الوضوح فوق الصورة */
+            transition: opacity 0.3s; padding: 20px;
             text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
         .hidden { opacity: 0; pointer-events: none; }
@@ -101,36 +89,28 @@
         h1 { color: #FFD700; font-size: 2.5rem; margin: 10px 0; text-shadow: 0 0 15px #ff8c00, 2px 2px 0 #000; }
         p { font-size: 1rem; color: #fff; margin-bottom: 20px; line-height: 1.5; font-weight: bold; }
 
-        /* أزرار - تعديل الخلفية لتكون bg.jpg */
         .btn {
-            /* التعديل هنا */
             background: url('bg.jpg') no-repeat center center;
-            background-size: 100% 100%; /* تملأ الزر بالكامل */
-            
-            border: 2px solid rgba(255,255,255,0.5); /* حدود خفيفة لتحديد الزر */
+            background-size: 100% 100%;
+            border: 2px solid rgba(255,255,255,0.5);
             padding: 15px 50px; color: white;
             font-size: 1.2rem; border-radius: 50px; cursor: pointer;
             font-family: 'Cairo', sans-serif; font-weight: bold;
             margin: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.5);
-            transition: transform 0.1s;
-            width: 80%; max-width: 300px;
-            touch-action: manipulation;
-            text-shadow: 0 2px 5px black; /* ظل للنص داخل الزر */
+            transition: transform 0.1s; width: 80%; max-width: 300px;
+            touch-action: manipulation; text-shadow: 0 2px 5px black;
         }
         .btn:active { transform: scale(0.95); opacity: 0.9; }
         
         .btn-primary {
-            /* تم إزالة التدرج اللوني القديم ليعتمد على الصورة */
-            border: 2px solid #FFD700; /* تمييز الزر الرئيسي بحدود ذهبية */
+            border: 2px solid #FFD700;
             box-shadow: 0 5px 20px rgba(255, 215, 0, 0.3);
             font-size: 1.4rem; padding: 18px 50px;
         }
 
-        /* Catalog Grid - تحسين العرض */
         .catalog-grid {
             display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
-            background: rgba(0,0,0,0.7); /* خلفية سوداء شفافة للقراءة */
-            padding: 10px;
+            background: rgba(0,0,0,0.7); padding: 10px;
             border-radius: 15px; margin: 10px 0; width: 100%;
             text-align: right; max-height: 50vh; overflow-y: auto;
             -webkit-overflow-scrolling: touch; 
@@ -181,7 +161,11 @@
     <div id="start-screen" class="screen">
         <img src="logo.png" style="width: 100px; margin-bottom: 15px; border-radius: 15px; box-shadow: 0 0 25px rgba(255,215,0,0.4);">
         <h1>صيّاد البحر</h1>
-        <p>المس الشاشة وحرك يمين وشمال للصيد.<br>اجمع أكبر سكور قبل الوقت ما يخلص!</p>
+        <p>
+            طريقة اللعب الجديدة:<br>
+            👈 <span style="color:#FFD700">اسحب</span> لتحريك المركب<br>
+            👇 <span style="color:#FFD700">اضغط</span> (Tap) لرمي السنارة
+        </p>
         <button class="btn btn-primary" onclick="startGame()">إبدأ الصيد 🎣</button>
         <button class="btn" onclick="showInfo()">📋 التعليمات</button>
     </div>
@@ -216,7 +200,6 @@
     const boatImg = new Image();
     boatImg.src = 'logo.png';
 
-    // --- Audio ---
     const sounds = {
         splash: new Audio('splash.mp3'),
         catch: new Audio('catch.mp3'),
@@ -249,7 +232,7 @@
         }
     }
 
-    // --- Game Engine ---
+    // --- تعديل السرعات (إبطاء اللعبة) ---
     let gameState = 'START';
     let score = 0;
     let timeLeft = 60;
@@ -262,75 +245,91 @@
     
     const hook = {
         x: 0, y: 100, originalY: 100,
-        state: 'IDLE', speed: 25, 
+        state: 'IDLE', 
+        speed: 15, // تم تقليل السرعة من 25 إلى 15
         caughtObj: null, stunTimer: 0,
         isSniper: false, sniperTimer: 0,
         isDoubleScore: false, doubleScoreTimer: 0
     };
 
-    const gafshat = {
-        bolti: ["أحلى صينية", "دلعني ي مركب", "يا سمك يا بني", "عشاء الغلابة", "بلطي بلدي"],
+const gafshat = {
+        bolti: ["أحلى صينية", "دلعني ي مركب", "ودييي ", "عشاء الغلابة", "بلطي بلدي"],
         bouri: ["تعالى ي مدلع", "فسفور عالي", "مزاج العالي", "سنجاري يا معلم"],
         shrimp: ["جمبري الغلابة ", "يا قشطة", "عزومة مراكبية", "كله فسفور"],
         lobster: ["يا باشا!", "اديني عروووض  VIP", "الله عليك", "صيد الملوك"]
     };
 
+    // تم تقليل سرعات الأسماك (speed)
     const objectTypes = [
-        { id: 'bolti', score: 10, emoji: '🐟', speed: 2.5, type: 'fish', prob: 25, gafshat: gafshat.bolti },
-        { id: 'bouri', score: 20, emoji: '🐠', speed: 3.5, type: 'fish', prob: 20, gafshat: gafshat.bouri },
-        { id: 'shrimp', score: 30, emoji: '🦐', speed: 4.5, type: 'fish', prob: 15, gafshat: gafshat.shrimp },
-        { id: 'lobster', score: 100, emoji: '🦞', speed: 8, type: 'fish', prob: 3, gafshat: gafshat.lobster },
-        { id: 'time', score: 0, emoji: '⏰', speed: 5, type: 'bonus', prob: 4, msg: '+10 ث' },
-        { id: 'whirlpool', score: 0, emoji: '🌀', speed: 6, type: 'skill', prob: 4, msg: 'الدوامة!' },
-        { id: 'phosphorus', score: 0, emoji: '🧪', speed: 6, type: 'skill', prob: 4, msg: 'فسفووور' },
-        { id: 'sniper', score: 0, emoji: '🎯', speed: 6, type: 'skill', prob: 3, msg: 'قناص!' },
-        { id: 'trash', score: -10, emoji: '🧃', speed: 2, type: 'bad', prob: 8, freeze: 0, msg: 'يععع' },
-        { id: 'boot', score: -15, emoji: '👢', speed: 2, type: 'bad', prob: 8, freeze: 60, msg: 'تجميد!' },
-        { id: 'seaweed', score: -20, emoji: '🌿', speed: 2.5, type: 'bad', prob: 8, freeze: 120, msg: 'تجميد!' },
-        { id: 'shark', score: -50, emoji: '🦈', speed: 5, type: 'bad', prob: 9, freeze: 180, msg: 'اتقطع!' }
+        { id: 'bolti', score: 10, emoji: '🐟', speed: 1.8, type: 'fish', prob: 25, gafshat: gafshat.bolti },
+        { id: 'bouri', score: 20, emoji: '🐠', speed: 2.5, type: 'fish', prob: 20, gafshat: gafshat.bouri },
+        { id: 'shrimp', score: 30, emoji: '🦐', speed: 3.2, type: 'fish', prob: 15, gafshat: gafshat.shrimp },
+        { id: 'lobster', score: 100, emoji: '🦞', speed: 5.0, type: 'fish', prob: 3, gafshat: gafshat.lobster },
+        { id: 'time', score: 0, emoji: '⏰', speed: 3.5, type: 'bonus', prob: 4, msg: '+10 ث' },
+        { id: 'whirlpool', score: 0, emoji: '🌀', speed: 4.0, type: 'skill', prob: 4, msg: 'الدوامة!' },
+        { id: 'phosphorus', score: 0, emoji: '🧪', speed: 4.0, type: 'skill', prob: 4, msg: 'فسفووور' },
+        { id: 'sniper', score: 0, emoji: '🎯', speed: 4.0, type: 'skill', prob: 3, msg: 'قناص!' },
+        { id: 'trash', score: -10, emoji: '🧃', speed: 1.5, type: 'bad', prob: 8, freeze: 0, msg: 'يععع' },
+        { id: 'boot', score: -15, emoji: '👢', speed: 1.5, type: 'bad', prob: 8, freeze: 60, msg: 'تجميد!' },
+        { id: 'seaweed', score: -20, emoji: '🌿', speed: 1.8, type: 'bad', prob: 8, freeze: 120, msg: 'تجميد!' },
+        { id: 'shark', score: -50, emoji: '🦈', speed: 3.5, type: 'bad', prob: 9, freeze: 180, msg: 'اتقطع!' }
     ];
 
-    // --- Mobile Resizing ---
     function resize() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        // تعديل ارتفاع المركب ليكون مناسب للموبايل
         hook.originalY = canvas.height * 0.15; 
         if (hook.state === 'IDLE') hook.y = hook.originalY;
     }
     window.addEventListener('resize', resize);
-    window.addEventListener('orientationchange', () => setTimeout(resize, 100)); // تأخير بسيط لضمان الدوران
+    window.addEventListener('orientationchange', () => setTimeout(resize, 100));
     resize();
 
-    // --- Mobile Touch Input ---
+    // --- نظام تحكم جديد (Tap vs Drag) ---
     let inputX = canvas.width / 2;
+    let isDragging = false;
+    let touchStartX = 0;
 
     function handleInput(x) {
         if (gameState === 'PLAYING' && hook.state === 'IDLE') {
             inputX = x;
-            // حدود الشاشة عشان المركب ميطلعش برة
             if (inputX < 30) inputX = 30;
             if (inputX > canvas.width - 30) inputX = canvas.width - 30;
         }
     }
 
-    // Touch Events
-    document.addEventListener('touchmove', (e) => {
-        // منع السكرول أثناء اللعب
-        e.preventDefault(); 
-        handleInput(e.touches[0].clientX);
-    }, { passive: false });
-
+    // Touch logic: Drag to move, Tap to shoot
     document.addEventListener('touchstart', (e) => {
-        // لو لمس الشاشة (مش زرار)، نحرك المركب لمكان اللمسة
         if (e.target.tagName !== 'BUTTON' && e.target.id !== 'sound-btn') {
+            touchStartX = e.touches[0].clientX;
+            isDragging = false;
+            // تحديث المكان فوراً عند اللمس لسرعة الاستجابة
             handleInput(e.touches[0].clientX);
-            // ونرمي السنارة كمان (اختياري، ممكن تفضل ضغط للرمي)
-            triggerHook();
         }
     }, { passive: false });
 
-    // Mouse Events (للكمبيوتر برضه)
+    document.addEventListener('touchmove', (e) => {
+        if (e.target.tagName !== 'BUTTON' && e.target.id !== 'sound-btn') {
+            e.preventDefault(); 
+            // إذا تحرك الإصبع أكثر من 10 بيكسل، نعتبرها سحب وليس نقرة
+            if (Math.abs(e.touches[0].clientX - touchStartX) > 10) {
+                isDragging = true;
+            }
+            handleInput(e.touches[0].clientX);
+        }
+    }, { passive: false });
+
+    document.addEventListener('touchend', (e) => {
+        if (e.target.tagName !== 'BUTTON' && e.target.id !== 'sound-btn') {
+            // لو لم يكن سحباً (حركة بسيطة جداً)، اعتبرها أمر صيد
+            if (!isDragging) {
+                triggerHook();
+            }
+            isDragging = false;
+        }
+    });
+
+    // Mouse logic (PC)
     document.addEventListener('mousemove', (e) => handleInput(e.clientX));
     document.addEventListener('mousedown', (e) => {
          if (e.target.tagName !== 'BUTTON' && e.target.id !== 'sound-btn') triggerHook();
@@ -356,7 +355,6 @@
         document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('end-screen').classList.add('hidden');
         
-        // Fullscreen request on mobile (optional but nice)
         if (document.documentElement.requestFullscreen && window.innerWidth < 800) {
            // document.documentElement.requestFullscreen().catch(()=>{});
         }
@@ -369,7 +367,7 @@
         fishes = [];
         bubbles = [];
         hook.state = 'IDLE';
-        hook.y = hook.originalY; // Reset Y
+        hook.y = hook.originalY;
         hook.caughtObj = null;
         
         hook.isSniper = false; hook.sniperTimer = 0;
@@ -401,8 +399,8 @@
             }
 
             if (timeLeft < 50 && timeLeft % 5 === 0 && timeLeft > 0) {
-                gameSpeedMultiplier += 0.1; 
-                fishOpacity -= 0.1;
+                gameSpeedMultiplier += 0.05; // زيادة السرعة ببطء شديد
+                fishOpacity -= 0.05;
                 if (fishOpacity < 0.3) fishOpacity = 0.3;
             }
 
@@ -414,7 +412,8 @@
     }
 
     function spawnObject() {
-        if (Math.random() < 0.045) { // 4.5% chance per frame
+        // تم تقليل معدل الظهور قليلاً (0.035) لتخفيف الزحمة
+        if (Math.random() < 0.035) { 
             const totalProb = objectTypes.reduce((acc, obj) => acc + obj.prob, 0);
             let rand = Math.random() * totalProb;
             let selected = objectTypes[0];
@@ -435,7 +434,6 @@
     }
 
     function updatePhysics() {
-        // Hook Logic
         if (hook.state === 'DOWN') {
             hook.y += hook.speed;
             if (hook.y > canvas.height) hook.state = 'UP';
@@ -455,11 +453,10 @@
                 frozenOverlay.style.display = 'none';
             }
         } else if (hook.state === 'IDLE') {
-            // Smooth movement towards input
-            hook.x += (inputX - hook.x) * 0.2; 
+            // حركة أسرع وأنعم للمركب (0.4 بدلاً من 0.2)
+            hook.x += (inputX - hook.x) * 0.4; 
         }
 
-        // Fishes Logic
         for (let i = fishes.length - 1; i >= 0; i--) {
             let f = fishes[i];
             f.x += (f.type.speed * gameSpeedMultiplier) * f.dir;
@@ -469,10 +466,9 @@
                 fishes.splice(i, 1); continue;
             }
 
-            // Collision
             if (hook.state === 'DOWN' && !hook.caughtObj) {
-                // Adjust hitbox for mobile (slightly larger forgiveness)
-                if (Math.hypot(hook.x - f.x, hook.y - f.y) < 60) {
+                // تكبير مساحة الاستلام (Hitbox) لتسهيل الصيد
+                if (Math.hypot(hook.x - f.x, hook.y - f.y) < 70) {
                     if (hook.isSniper && f.type.type === 'bad') continue; 
                     hook.caughtObj = f.type;
                     hook.state = 'UP';
@@ -481,7 +477,6 @@
             }
         }
         
-        // Bubbles
         if(Math.random()<0.1) bubbles.push({x:Math.random()*canvas.width, y:canvas.height, r:Math.random()*5+2, s:Math.random()*2+1});
         for(let i=bubbles.length-1; i>=0; i--) {
             bubbles[i].y -= bubbles[i].s;
@@ -593,11 +588,9 @@
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Bubbles
         ctx.fillStyle = 'rgba(255,255,255,0.15)';
         bubbles.forEach(b => { ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 7); ctx.fill(); });
 
-        // Fishing Line
         ctx.beginPath(); ctx.moveTo(hook.x, 0); ctx.lineTo(hook.x, hook.y);
         ctx.lineWidth = hook.state === 'STUNNED' ? 1 : 2; 
         
@@ -610,7 +603,6 @@
         else ctx.setLineDash([]);
         ctx.stroke(); ctx.setLineDash([]);
 
-        // The Hook (End of line)
         ctx.save(); ctx.translate(hook.x, hook.y);
         if (hook.state !== 'STUNNED') { 
             ctx.fillStyle = hook.isSniper ? '#FFD700' : '#aaa';
@@ -624,7 +616,6 @@
         }
         ctx.restore();
 
-        // Fishes
         ctx.save();
         ctx.globalAlpha = fishOpacity; 
         fishes.forEach(f => {
@@ -638,8 +629,7 @@
         });
         ctx.restore();
 
-        // --- The Boat (LOGO) ---
-        const boatWidth = canvas.width < 500 ? 80 : 100; // تصغير المركب على الموبايل
+        const boatWidth = canvas.width < 500 ? 80 : 100;
         const boatHeight = canvas.width < 500 ? 50 : 60;
         
         if (boatImg.complete) {
@@ -649,11 +639,9 @@
             } else if (hook.isDoubleScore) {
                 ctx.shadowColor = "#32CD32"; ctx.shadowBlur = 20;
             }
-            // رسم اللوجو بحيث يكون منتصفه هو مكان خروج السنارة
             ctx.drawImage(boatImg, hook.x - boatWidth/2, hook.originalY - boatHeight + 10, boatWidth, boatHeight);
             ctx.restore();
         } else {
-            // Fallback square
             ctx.fillStyle = '#8B4513';
             ctx.fillRect(hook.x - 30, hook.originalY - 35, 60, 35);
         }
@@ -709,5 +697,4 @@
 </script>
 
 </body>
-
 </html>
